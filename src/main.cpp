@@ -5,6 +5,7 @@
 #include <PN532_I2C.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
+#include <Adafruit_PN532.h>
 
 #define PIN_POWER_ON 15
 #define PIN_BUTTON_1 0
@@ -113,6 +114,12 @@ void loop()
     {
         if (nfc.tagPresent())
         {
+            bool success = nfc.format();
+            if (success) {
+                Serial.println("\nSuccess, tag formatted as NDEF.");
+            } else {
+                Serial.println("\nFormat failed.");
+            }
             NfcTag tag = nfc.read();
             Serial.println("[+] Tag detected");
             tft.println("[+] Tag detected");
@@ -121,6 +128,6 @@ void loop()
     }
     button.tick();
     button_start_read.tick();
-    delay(10);
+    delay(100);
 }
 
