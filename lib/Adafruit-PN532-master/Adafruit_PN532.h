@@ -145,7 +145,7 @@ public:
   Adafruit_PN532(uint8_t ss, SPIClass *theSPI = &SPI); // Hardware SPI
   Adafruit_PN532(uint8_t irq, uint8_t reset,
                  TwoWire *theWire = &Wire);              // Hardware I2C
-  Adafruit_PN532(uint8_t reset, HardwareSerial *theSer); // Hardware UART
+  Adafruit_PN532(uint8_t  , HardwareSerial *theSer); // Hardware UART
   bool begin(void);
 
   void reset(void);

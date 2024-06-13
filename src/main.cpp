@@ -2,8 +2,8 @@
 #include <Wire.h>
 #include <OneButton.h>
 #include <TFT_eSPI.h>
-#include <PN532_I2C.h>
 #include <PN532.h>
+
 #include <NfcAdapter.h>
 #include <Adafruit_PN532.h>
 
