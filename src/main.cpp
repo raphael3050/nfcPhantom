@@ -20,8 +20,23 @@ volatile bool connected = false;
 OneButton button(PIN_BUTTON_1, true);
 OneButton button_start_read(PIN_BUTTON_2, true);
 TFT_eSPI tft = TFT_eSPI();
-PN532_I2C pn532_i2c(Wire);
-NfcAdapter nfc = NfcAdapter(pn532_i2c);
+Adafruit_PN532 nfc(sda, scl);
+
+
+void displayMessage(char const *message, boolean newline = true)
+{   
+    if (newline)
+    {
+        Serial.println(message);
+        tft.println(message);
+    }
+    else
+    {
+        tft.print(message);
+        Serial.print(message);
+    }
+}
+
 
 void deviceScan(TwoWire *_port, Stream *stream)
 {
@@ -70,25 +85,22 @@ void deviceScan(TwoWire *_port, Stream *stream)
 
 void simpleClick()
 {
-    Serial.println("[+] Scanning I2C devices...");
-    tft.println("[+] Scanning I2C devices...");
+    displayMessage("[+] Scanning I2C devices...");
     deviceScan(&Wire, &Serial);
 }
 
 void startRecordClick()
 {
-    Serial.println("[+] Scanning NFC devices...");
-    tft.println("[+] Scanning NFC devices...");
+    displayMessage("[+] Scanning NFC devices...");
     start_read = 1;
 }
-
 
 void setup()
 {
     pinMode(PIN_POWER_ON, OUTPUT);
     digitalWrite(PIN_POWER_ON, HIGH);
     Serial.begin(115200);
-    Wire.begin(sda, scl);
+    //Wire.begin(sda, scl);
 
     button.attachClick(simpleClick);
     button_start_read.attachClick(startRecordClick);
@@ -100,34 +112,47 @@ void setup()
     tft.setCursor(0, 0);
 
     nfc.begin();
+    nfc.SAMConfig();
+    displayMessage("[+] NFC reader started, waiting for a tag...");
 }
 
 void loop()
 {
     if (message_displayed == 0)
     {
-        tft.println("[+] Press the button to start scanning I2C devices...");
-        Serial.println("[+] Press the button to start scanning I2C devices...");
+        displayMessage("[+] Press the button to start scanning I2C devices...");
         message_displayed = 1;
     }
     if (start_read == 1)
     {
-        if (nfc.tagPresent())
+        uint8_t success;
+        uint8_t uid[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer pour l'UID de la carte
+        uint8_t uidLength;                     // Taille de l'UID
+        char buffer[32]; // for the itoa function
+
+        // Essayer de lire l'UID de la carte NFC
+        success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+        if (success)
         {
-            bool success = nfc.format();
-            if (success) {
-                Serial.println("\nSuccess, tag formatted as NDEF.");
-            } else {
-                Serial.println("\nFormat failed.");
+            displayMessage("[+] Found an NFC card!");
+            // Afficher l'UID de la carte NFC
+            displayMessage("[+] UID Length: ", false);
+
+            displayMessage(itoa(uidLength, buffer, 10), false);            
+            displayMessage(" bytes");
+            Serial.print("[+] UID Value: ");
+            displayMessage("[+] UID Value: ", false);
+            for (uint8_t i = 0; i < uidLength; i++)
+            {
+                displayMessage(" 0x", (boolean)false);
+                Serial.print(uid[i], HEX);
             }
-            NfcTag tag = nfc.read();
-            Serial.println("[+] Tag detected");
-            tft.println("[+] Tag detected");
+            Serial.println("");
+
+            delay(1000);
         }
-        start_read = 0;
     }
     button.tick();
     button_start_read.tick();
     delay(100);
 }
-
